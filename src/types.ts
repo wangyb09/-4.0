@@ -5,7 +5,26 @@ export type PrimaryModule =
   | 'governance'
   | 'development'
   | 'scheduling'
-  | 'system';
+  | 'assets'
+  | 'service'
+  | 'system'
+  | 'bigdata_platform'
+  | 'ontology';
+
+export interface SecondaryMenuItem {
+  id: string;
+  title: string;
+  description?: string;
+  tag?: string;
+  icon?: string;
+}
+
+export interface Level1MenuItem {
+  id: string;
+  title: string;
+  icon?: string;
+  subMenus: SecondaryMenuItem[];
+}
 
 export interface ModuleNavInfo {
   key: PrimaryModule;
@@ -13,12 +32,8 @@ export interface ModuleNavInfo {
   subTitle: string;
   icon: string;
   badge?: string;
-  subMenus: {
-    id: string;
-    title: string;
-    description: string;
-    tag?: string;
-  }[];
+  level1Menus?: Level1MenuItem[];
+  subMenus: SecondaryMenuItem[];
 }
 
 export type AlertSeverity = 'P0' | 'P1' | 'P2' | 'P3';
@@ -78,11 +93,12 @@ export interface ShortcutItem {
   title: string;
   description: string;
   module: PrimaryModule;
+  subMenuId?: string;
   icon: string;
-  category: 'common' | 'develop' | 'governance' | 'ops' | 'asset';
+  category?: 'common' | 'develop' | 'governance' | 'ops' | 'asset';
   badge?: string;
-  pinned: boolean;
-  actionKey: string;
+  pinned?: boolean;
+  actionKey?: string;
 }
 
 export interface PlatformMetrics {
@@ -90,6 +106,10 @@ export interface PlatformMetrics {
   tablesDelta: number;
   totalStoragePB: number;
   storageDeltaTB: number;
+  scriptJobsCount?: number;
+  scriptJobsSuccessRate?: number;
+  scriptJobsDelta?: number;
+  scriptJobsRunningCount?: number;
   totalApiCalls: number;
   apiCallsDeltaPercent: number;
   dailyApiCallsWan?: number;
@@ -121,4 +141,25 @@ export interface QualityDimensionScore {
   fullMark: number;
   ruleCount: number;
   abnormalCount: number;
+}
+
+export interface DataOverviewStatItem {
+  id: string;
+  name: string;
+  dimensionKey: 'datasource' | 'table' | 'field' | 'volume';
+  icon: string;
+  badge: string;
+  // 累计值统计 (Cumulative)
+  cumulativeValue: string;
+  cumulativeUnit: string;
+  cumulativeDesc: string;
+  // 当日值统计 (Today)
+  todayValue: string;
+  todayUnit: string;
+  todayDesc: string;
+  todayTrend: string;
+  todayTrendType: 'up' | 'down' | 'neutral';
+  // 分布与明细标签
+  breakdown: { label: string; value: string }[];
+  highlightTag?: string;
 }

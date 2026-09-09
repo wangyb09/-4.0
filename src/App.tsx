@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { Navigation } from './components/Navigation';
 import { MetricsOverview } from './components/MetricsOverview';
+import { DataOverviewStats } from './components/DataOverviewStats';
 import { QuickShortcuts } from './components/QuickShortcuts';
-import { TodoList } from './components/TodoList';
-import { RecentVisits } from './components/RecentVisits';
-import { SchedulingTrendChart } from './components/SchedulingTrendChart';
-import { DataQualityRadar } from './components/DataQualityRadar';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { AlertDetailModal } from './components/AlertDetailModal';
 import { TodoDetailModal } from './components/TodoDetailModal';
@@ -19,14 +15,12 @@ import {
   PlatformMetrics,
   AlertItem,
   TodoItem,
-  RecentVisitItem,
   ShortcutItem,
 } from './types';
 import {
   INITIAL_METRICS,
   INITIAL_ALERTS,
   INITIAL_TODOS,
-  INITIAL_RECENT_VISITS,
   INITIAL_SHORTCUTS,
 } from './data/mockData';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
@@ -41,8 +35,23 @@ export default function App() {
   const [metrics, setMetrics] = useState<PlatformMetrics>(INITIAL_METRICS);
   const [alerts, setAlerts] = useState<AlertItem[]>(INITIAL_ALERTS);
   const [todos, setTodos] = useState<TodoItem[]>(INITIAL_TODOS);
-  const [recentVisits, setRecentVisits] = useState<RecentVisitItem[]>(INITIAL_RECENT_VISITS);
-  const [shortcuts, setShortcuts] = useState<ShortcutItem[]>(INITIAL_SHORTCUTS);
+  const [shortcuts, setShortcuts] = useState<ShortcutItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('datacraft_shortcuts_v2');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((item: ShortcutItem) => {
+            const { badge, ...rest } = item;
+            return rest;
+          });
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return INITIAL_SHORTCUTS;
+  });
 
   // Modal states
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -53,9 +62,9 @@ export default function App() {
 
   // Toast Notification state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [toastType, setToastType] = useState<'success' | 'info'>('success');
+  const [toastType, setToastType] = useState<'success' | 'info' | 'warning'>('success');
 
-  const showToast = (msg: string, type: 'success' | 'info' = 'success') => {
+  const showToast = (msg: string, type: 'success' | 'info' | 'warning' = 'success') => {
     setToastMessage(msg);
     setToastType(type);
     setTimeout(() => {
@@ -109,41 +118,46 @@ export default function App() {
     showToast('审批工单已驳回并通知申请人重新提交', 'info');
   };
 
-  // Recent Visit Star Toggle
-  const handleToggleStar = (id: string) => {
-    setRecentVisits((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, isStarred: !item.isStarred } : item
-      )
-    );
-    const target = recentVisits.find((i) => i.id === id);
-    if (target) {
-      showToast(
-        target.isStarred ? `已取消收藏 ${target.name}` : `已成功收藏 ${target.name} 至星标资产`
-      );
+  // Shortcut Save / Reset Handlers
+  const handleSaveShortcuts = (updated: ShortcutItem[]) => {
+    setShortcuts(updated);
+    try {
+      localStorage.setItem('datacraft_shortcuts_v2', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
     }
+    showToast('快捷入口配置已成功保存并实时生效！');
   };
 
-  // Shortcut Pin Toggle
-  const handleTogglePinShortcut = (id: string) => {
-    setShortcuts((prev) =>
-      prev.map((sc) => (sc.id === id ? { ...sc, pinned: !sc.pinned } : sc))
-    );
+  const handleResetDefaultShortcuts = () => {
+    setShortcuts(INITIAL_SHORTCUTS);
+    try {
+      localStorage.removeItem('datacraft_shortcuts_v2');
+    } catch (e) {
+      console.error(e);
+    }
+    showToast('已成功恢复系统预设快捷入口');
   };
 
   // Trigger Action from Shortcut
-  const handleTriggerAction = (actionKey: string) => {
-    setQuickActionKey(actionKey);
-  };
+  const handleTriggerShortcut = (actionKey: string, module?: PrimaryModule, subMenuId?: string) => {
+    // If it is one of the interactive action modals
+    if (['create_sync_job', 'open_sql_ide', 'apply_table_perm', 'diagnose_job'].includes(actionKey)) {
+      setQuickActionKey(actionKey);
+      return;
+    }
 
-  // Open asset from Recent Visits
-  const handleOpenAsset = (item: RecentVisitItem) => {
-    if (item.category === 'sql_script') {
-      setQuickActionKey('open_sql_ide');
-    } else if (item.category === 'dag_task') {
-      setQuickActionKey('view_dag_ops');
-    } else {
-      showToast(`已直达数据表【${item.name}】的字典与实时元数据视图`);
+    // Direct navigation to target module & secondary menu
+    if (module && module !== 'home') {
+      setActiveModule(module);
+      if (subMenuId) {
+        setActiveSubMenuId(subMenuId);
+      }
+      return;
+    }
+
+    if (actionKey) {
+      setQuickActionKey(actionKey);
     }
   };
 
@@ -160,13 +174,10 @@ export default function App() {
         pendingTodos={todos}
         alerts={alerts}
         onOpenTodos={() => {
-          if (activeModule !== 'home') setActiveModule('home');
-          const element = document.getElementById('workbench-todo-section');
-          element?.scrollIntoView({ behavior: 'smooth' });
+          setSelectedTodo(todos.find((t) => t.status === 'pending') || todos[0] || null);
         }}
         onOpenAlerts={() => {
-          setActiveModule('governance');
-          setActiveSubMenuId('quality_rules');
+          setSelectedAlert(alerts.find((a) => a.status === 'active') || alerts[0] || null);
         }}
         onNavigateHome={() => {
           setActiveModule('home');
@@ -175,16 +186,18 @@ export default function App() {
       />
 
       {/* 2. Main Workspace Area */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto p-3.5 sm:p-5">
         {activeModule === 'home' ? (
-          <>
-            {/* 3.1 Platform Core Metrics Overview */}
+          <div className="space-y-3.5">
+            {/* 3.1 Platform Core Metrics Overview - Top 4 Cards */}
             <section id="workbench-metrics-overview">
               <MetricsOverview
                 metrics={metrics}
                 onFilterAlerts={(sev) => {
-                  setActiveModule('governance');
-                  setActiveSubMenuId('quality_rules');
+                  setSelectedAlert(alerts.find((a) => a.severity === sev) || alerts[0] || null);
+                }}
+                onNavigateDevelopment={() => {
+                  setActiveModule('development');
                 }}
                 onNavigateScheduling={() => {
                   setActiveModule('scheduling');
@@ -195,15 +208,29 @@ export default function App() {
               />
             </section>
 
-            {/* 3.2 Quick Shortcuts Bar */}
-            <section id="workbench-shortcuts-section">
+            {/* 3.2 Data Overview Statistics (数据总览统计: 数据源, 数据表, 字段, 数据量) */}
+            <section id="workbench-data-overview-section">
+              <DataOverviewStats
+                onShowToast={showToast}
+                onSelectDimension={(key) => {
+                  if (key === 'table') {
+                    setActiveModule('metadata');
+                  } else if (key === 'datasource') {
+                    setActiveModule('ingestion');
+                  }
+                }}
+              />
+            </section>
+
+            {/* 3.3 Quick Shortcuts Bar */}
+            <section id="workbench-shortcuts-section" className="pt-2 sm:pt-2.5">
               <QuickShortcuts
                 shortcuts={shortcuts}
-                onTriggerAction={handleTriggerAction}
+                onTriggerAction={handleTriggerShortcut}
                 onOpenConfigModal={() => setIsShortcutConfigOpen(true)}
               />
             </section>
-          </>
+          </div>
         ) : (
           /* Subsystem Dedicated Module Workspace */
           <SubsystemModuleView
@@ -213,7 +240,7 @@ export default function App() {
               setActiveModule('home');
               setActiveSubMenuId(undefined);
             }}
-            onOpenQuickAction={handleTriggerAction}
+            onOpenQuickAction={handleTriggerShortcut}
             onShowToast={showToast}
           />
         )}
@@ -249,7 +276,8 @@ export default function App() {
         isOpen={isShortcutConfigOpen}
         onClose={() => setIsShortcutConfigOpen(false)}
         shortcuts={shortcuts}
-        onTogglePin={handleTogglePinShortcut}
+        onSaveShortcuts={handleSaveShortcuts}
+        onResetDefault={handleResetDefaultShortcuts}
       />
 
       {/* 4.5 Quick Action / SQL IDE / Sync / Perm Modal */}
@@ -278,14 +306,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {/* 6. Footer in Aliyun console style */}
-      <footer className="border-t border-[#E5E6EB] bg-white py-3 text-center text-xs text-slate-500">
-        <div className="max-w-[1600px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>阿里云 DataWorks · 智能数据中台与治理工作台</span>
-          <span className="font-mono text-slate-400">华东1 (杭州) 集群节点全量在线 · P99: 45ms</span>
-        </div>
-      </footer>
     </div>
   );
 }

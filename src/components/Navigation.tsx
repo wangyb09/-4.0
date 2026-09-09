@@ -8,6 +8,9 @@ import {
   Clock,
   Settings,
   ChevronRight,
+  Network,
+  Share2,
+  Cpu,
 } from 'lucide-react';
 import { PrimaryModule, ModuleNavInfo } from '../types';
 import { PRIMARY_MODULES } from '../data/mockData';
@@ -39,8 +42,14 @@ export const Navigation: React.FC<NavigationProps> = ({
         return <Code2 className="w-3.5 h-3.5" />;
       case 'Clock':
         return <Clock className="w-3.5 h-3.5" />;
+      case 'Network':
+        return <Network className="w-3.5 h-3.5" />;
+      case 'Share2':
+        return <Share2 className="w-3.5 h-3.5" />;
       case 'Settings':
         return <Settings className="w-3.5 h-3.5" />;
+      case 'Cpu':
+        return <Cpu className="w-3.5 h-3.5" />;
       default:
         return <Database className="w-3.5 h-3.5" />;
     }
@@ -102,11 +111,6 @@ export const Navigation: React.FC<NavigationProps> = ({
                             <div>
                               <div className="font-medium flex items-center gap-1.5 text-slate-800">
                                 <span>{sub.title}</span>
-                                {sub.tag && (
-                                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-orange-50 text-[#FF6A00] border border-orange-200">
-                                    {sub.tag}
-                                  </span>
-                                )}
                               </div>
                               <div className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
                                 {sub.description}

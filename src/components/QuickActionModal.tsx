@@ -76,6 +76,11 @@ LIMIT 100;`);
   const [apiPath, setApiPath] = useState('/api/v1/service/trade/user-daily');
   const [apiRateLimit, setApiRateLimit] = useState('10,000 QPS / IP');
 
+  // Metadata lake ingestion state
+  const [lakeCatalog, setLakeCatalog] = useState('Apache Iceberg Lakehouse (prod_iceberg_catalog)');
+  const [metaSourceCluster, setMetaSourceCluster] = useState('全源多通道 (MySQL + PolarDB + Kafka + ClickHouse)');
+  const [metaSyncStrategy, setMetaSyncStrategy] = useState('CDC实时捕获 + 小时级增量巡检');
+
   const handleRunSql = () => {
     setQueryRunning(true);
     setTimeout(() => {
@@ -107,7 +112,7 @@ LIMIT 100;`);
               ) : actionKey === 'create_sync_job' ? (
                 <FolderPlus className="w-4 h-4" />
               ) : actionKey === 'search_lineage' ? (
-                <GitFork className="w-4 h-4" />
+                <Database className="w-4 h-4 text-cyan-600" />
               ) : actionKey === 'open_data_governance' ? (
                 <ShieldCheck className="w-4 h-4 text-[#00B365]" />
               ) : actionKey === 'open_task_scheduling' ? (
@@ -126,7 +131,7 @@ LIMIT 100;`);
               <h2 className="text-sm font-bold text-slate-800">
                 {actionKey === 'open_sql_ide' && 'SQL 开发工作台 · 交互调试 (DataStudio)'}
                 {actionKey === 'create_sync_job' && '新建数据集成管道 (DataWorks DataX)'}
-                {actionKey === 'search_lineage' && '数据全景血缘拓扑检索'}
+                {actionKey === 'search_lineage' && '统一元数据入湖 · 湖仓多源注册 (Metadata Lake)'}
                 {actionKey === 'open_data_governance' && '数据治理工作台 · 质量与标准'}
                 {actionKey === 'open_task_scheduling' && '任务调度编排与运行监控 (DAG Scheduler)'}
                 {actionKey === 'open_api_sharing' && '接口共享服务平台 · 数据服务API发布'}
@@ -263,6 +268,83 @@ LIMIT 100;`);
 
               <div className="p-3 rounded bg-orange-50/50 border border-orange-200 text-[11px] text-[#FF6A00]">
                 ⚡ 系统将自动开启 Schema 漂移探测与毫秒级增量捕获，吞吐预计 45,000 QPS。
+              </div>
+            </div>
+          )}
+
+          {/* Case: Unified Metadata Lake Ingestion */}
+          {actionKey === 'search_lineage' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-600 mb-1.5 font-medium">目标湖仓元数据目录 (Lake Catalog)</label>
+                  <select
+                    value={lakeCatalog}
+                    onChange={(e) => setLakeCatalog(e.target.value)}
+                    className="w-full bg-white border border-[#D9D9D9] rounded p-2 text-slate-800 focus:outline-none focus:border-[#FF6A00]"
+                  >
+                    <option>Apache Iceberg Lakehouse (prod_iceberg_catalog)</option>
+                    <option>Apache Paimon 实时湖仓 (paimon_realtime_catalog)</option>
+                    <option>Hive Metastore (hive_emr_central_db)</option>
+                    <option>MaxCompute DataWorks 元数据总线</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-600 mb-1.5 font-medium">源端多源纳管范围</label>
+                  <select
+                    value={metaSourceCluster}
+                    onChange={(e) => setMetaSourceCluster(e.target.value)}
+                    className="w-full bg-white border border-[#D9D9D9] rounded p-2 text-slate-800 focus:outline-none focus:border-[#FF6A00]"
+                  >
+                    <option>全源多通道 (MySQL + PolarDB + Kafka + ClickHouse)</option>
+                    <option>OLTP 关系库集群 (PolarDB/MySQL 12个实例)</option>
+                    <option>实时消息流通道 (Kafka / Flink Catalog)</option>
+                    <option>数仓与分析引擎 (ClickHouse / Hologres / StarRocks)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-600 mb-1.5 font-medium">元数据入湖同步策略</label>
+                <div className="flex flex-wrap gap-2">
+                  {['CDC实时捕获 + 小时级增量巡检', '每日全量快照对账 (T+1)', '实时DDL变更事件驱动'].map((strat) => (
+                    <button
+                      key={strat}
+                      onClick={() => setMetaSyncStrategy(strat)}
+                      className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${
+                        metaSyncStrategy === strat
+                          ? 'bg-cyan-50 text-cyan-700 border-cyan-500 font-semibold'
+                          : 'bg-white text-slate-600 border-[#D9D9D9] hover:bg-slate-50'
+                      }`}
+                    >
+                      {strat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ingestion Pipeline Metric Preview */}
+              <div className="grid grid-cols-4 gap-2.5 p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+                <div>
+                  <div className="text-[10px] text-slate-400">已纳管数据源</div>
+                  <div className="text-sm font-bold text-slate-800 font-mono mt-0.5">16 个集群</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400">湖仓注册表</div>
+                  <div className="text-sm font-bold text-cyan-600 font-mono mt-0.5">1,420 张</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400">字段解析数</div>
+                  <div className="text-sm font-bold text-slate-800 font-mono mt-0.5">38,650 个</div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400">采集健康度</div>
+                  <div className="text-sm font-bold text-[#00B365] font-mono mt-0.5">99.8%</div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded bg-cyan-50/60 border border-cyan-200 text-[11px] text-cyan-800">
+                🌊 统一元数据入湖引擎已开启自动 DDL 解析、字段注释推导、表物理统计采集与湖仓一体目录注册。
               </div>
             </div>
           )}
@@ -479,6 +561,7 @@ LIMIT 100;`);
             onClick={() => handleGenericSubmit(
               actionKey === 'open_sql_ide' ? 'SQL 工作台调试' :
               actionKey === 'create_sync_job' ? '新建数据集成管道' :
+              actionKey === 'search_lineage' ? '统一元数据入湖' :
               actionKey === 'open_data_governance' ? '数据治理策略' :
               actionKey === 'open_task_scheduling' ? '任务调度编排' :
               actionKey === 'open_api_sharing' ? '接口共享发布' :
