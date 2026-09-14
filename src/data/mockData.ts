@@ -813,11 +813,7 @@ export const DEFAULT_LOGIN_CONFIG: LoginPageConfig = {
 
 三、用户权限与责任
 用户须按照最小权限原则申请与使用数据资产。如发现异常登录或数据安全隐患，应立即向系统管理员报告。如违反保密协议，企业保留依规严肃追责及解除劳动合同之权利。`,
-  helpLinks: [
-    { label: '帮助', url: '#' },
-    { label: '反馈', url: '#' },
-    { label: '修复公示', url: '#' },
-  ],
+  helpLinks: [],
   footerCopyright: '© 2026 数据中台 Enterprise Big Data Platform. 鲁ICP备20260914号-1',
 };
 

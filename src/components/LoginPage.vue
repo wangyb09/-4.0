@@ -79,23 +79,6 @@
           {{ config.platformTitle || '数据中台' }}
         </h1>
       </div>
-
-      <!-- Right: Links (帮助 反馈 修复公示) -->
-      <div class="flex items-center gap-5 text-xs">
-        <button
-          v-for="(link, idx) in config.helpLinks"
-          :key="idx"
-          @click="handleLinkClick(link.label)"
-          :class="[
-            'transition-colors cursor-pointer font-medium',
-            config.bgTheme === 'tech_dark_blue'
-              ? 'text-slate-300 hover:text-white'
-              : 'text-slate-600 hover:text-[#2563EB]'
-          ]"
-        >
-          {{ link.label }}
-        </button>
-      </div>
     </header>
 
     <!-- 3. Main Center Content (2-Column Grid matching image.png) -->
@@ -532,24 +515,5 @@ const handleForgotPassword = () => {
     title: '密码找回与重置指引',
     content: '为保障企业中台核心数据安全，密码重置请联系集团超级管理员（admin@datacraft.io），或通过企业微信/钉钉中台运维助手提交工单。',
   };
-};
-
-const handleLinkClick = (label: string) => {
-  if (label === '帮助') {
-    modalInfo.value = {
-      title: '使用帮助文档',
-      content: '欢迎查阅《数据中台快速上手指南》、《元数据采集配置规范》及《DAG离线作业开发调度手册》。',
-    };
-  } else if (label === '反馈') {
-    modalInfo.value = {
-      title: '用户意见与工单反馈',
-      content: '如果您在使用过程中遇到任务失败、权限申请或功能建议，可通过服务台直接反馈。',
-    };
-  } else if (label === '修复公示') {
-    modalInfo.value = {
-      title: '系统版本与修复公示 (v4.2.0)',
-      content: '最新更新日志：已优化登录页个性化配置、上线个人中心密码修改与头像自定义功能、强化数据资产大盘调度链路。',
-    };
-  }
 };
 </script>
