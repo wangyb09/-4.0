@@ -35,7 +35,7 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div v-if="selectedSubId !== 'sys_config' && selectedSubId !== 'login_config'" class="flex items-center gap-2">
         <button
           @click="handleQuickActionClick"
           class="px-3.5 py-1.5 rounded bg-[#FF6A00] hover:bg-[#FF7D1A] text-white text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
@@ -815,38 +815,83 @@
         </div>
 
         <!-- SYSTEM MANAGEMENT (系统管理) -->
-        <div v-else-if="module === 'system'" class="bg-white border border-[#E5E6EB] rounded-lg p-4 shadow-xs space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <h3 class="text-sm font-bold text-slate-800">
-                {{ activeSubItem?.title || '系统管理与用户权限中心' }}
-              </h3>
-              <p class="text-xs text-slate-400 mt-0.5">多租户隔离、RBAC鉴权、行级/列级安全访问策略与审计流水</p>
-            </div>
-            <button
-              @click="$emit('openQuickAction', 'apply_table_perm')"
-              class="px-3 py-1.5 rounded bg-[#FF6A00] hover:bg-[#FF7D1A] text-white text-xs font-medium flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
-            >
-              <KeyRound class="w-3.5 h-3.5" />
-              <span>权限申请</span>
-            </button>
+        <div v-else-if="module === 'system'" class="space-y-4">
+          <!-- Sub-module A: System Configuration & Login Page Customization (Requested) -->
+          <div v-if="selectedSubId === 'sys_config' || selectedSubId === 'login_config'" class="bg-white border border-[#E5E6EB] rounded-lg p-5 shadow-xs">
+            <SystemConfigView
+              :config="loginConfig || DEFAULT_LOGIN_CONFIG"
+              @saveConfig="(cfg) => $emit('saveLoginConfig', cfg)"
+              @previewLoginPage="$emit('previewLoginPage')"
+              @showToast="(msg) => $emit('showToast', msg)"
+            />
           </div>
 
-          <div class="space-y-2">
-            <div
-              v-for="(r, idx) in [
-                { role: '高级数据架构师 / PM', members: '12 人', access: '全项目空间读写 + 生产发布评审' },
-                { role: '数仓开发工程师', members: '48 人', access: 'DEV/TEST 空间读写 + PROD DWD/DWS' },
-                { role: '业务分析师 / BI', members: '120 人', access: 'PROD ADS 报表层只读 (动态脱敏)' },
-              ]"
-              :key="idx"
-              class="p-3 rounded-lg bg-[#FAFAFA] hover:bg-white border border-[#E5E6EB] hover:border-[#FF6A00] flex items-center justify-between shadow-2xs transition-all"
-            >
+          <!-- Sub-module B: User Center Redirection Banner -->
+          <div v-else-if="selectedSubId === 'user_center'" class="bg-white border border-[#E5E6EB] rounded-lg p-6 shadow-xs space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
-                <span class="text-xs font-bold text-slate-800">{{ r.role }}</span>
-                <div class="text-[11px] text-slate-500 mt-0.5">{{ r.access }}</div>
+                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <User class="w-4 h-4 text-[#FF6A00]" />
+                  用户中心与个人资料维护
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">支持修改头像、用户名、密码、电子邮箱与联系电话</p>
               </div>
-              <span class="text-xs text-slate-600 font-mono font-medium">{{ r.members }}</span>
+              <button
+                @click="$emit('openProfile')"
+                class="px-4 py-1.5 rounded bg-[#FF6A00] hover:bg-[#FF7D1A] text-white text-xs font-medium flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              >
+                <ExternalLink class="w-3.5 h-3.5" />
+                <span>进入个人中心专属页面</span>
+              </button>
+            </div>
+            <div class="p-4 rounded-xl bg-orange-50/60 border border-orange-100 flex items-center justify-between">
+              <div class="space-y-1">
+                <div class="text-xs font-bold text-orange-950">当前登录身份：李晨（超级管理员）</div>
+                <div class="text-[11px] text-orange-800/80">点击右上角头像或点击上方按钮，即可直达全功能个人中心页面进行资料与密码修改。</div>
+              </div>
+              <button
+                @click="$emit('openProfile')"
+                class="px-3 py-1 text-xs rounded bg-white text-[#FF6A00] border border-orange-200 font-medium hover:bg-orange-50 cursor-pointer"
+              >
+                立即前往
+              </button>
+            </div>
+          </div>
+
+          <!-- Sub-module C: Default System Roles & RBAC Matrix -->
+          <div v-else class="bg-white border border-[#E5E6EB] rounded-lg p-4 shadow-xs space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 class="text-sm font-bold text-slate-800">
+                  {{ activeSubItem?.title || '系统管理与用户权限中心' }}
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">多租户隔离、RBAC鉴权、行级/列级安全访问策略与审计流水</p>
+              </div>
+              <button
+                @click="$emit('openQuickAction', 'apply_table_perm')"
+                class="px-3 py-1.5 rounded bg-[#FF6A00] hover:bg-[#FF7D1A] text-white text-xs font-medium flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+              >
+                <KeyRound class="w-3.5 h-3.5" />
+                <span>权限申请</span>
+              </button>
+            </div>
+
+            <div class="space-y-2">
+              <div
+                v-for="(r, idx) in [
+                  { role: '高级数据架构师 / PM', members: '12 人', access: '全项目空间读写 + 生产发布评审' },
+                  { role: '数仓开发工程师', members: '48 人', access: 'DEV/TEST 空间读写 + PROD DWD/DWS' },
+                  { role: '业务分析师 / BI', members: '120 人', access: 'PROD ADS 报表层只读 (动态脱敏)' },
+                ]"
+                :key="idx"
+                class="p-3 rounded-lg bg-[#FAFAFA] hover:bg-white border border-[#E5E6EB] hover:border-[#FF6A00] flex items-center justify-between shadow-2xs transition-all"
+              >
+                <div>
+                  <span class="text-xs font-bold text-slate-800">{{ r.role }}</span>
+                  <div class="text-[11px] text-slate-500 mt-0.5">{{ r.access }}</div>
+                </div>
+                <span class="text-xs text-slate-600 font-mono font-medium">{{ r.members }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1013,13 +1058,18 @@ import {
   Server,
   RefreshCw,
   Eye,
+  User,
+  ExternalLink,
+  Palette,
 } from 'lucide-vue-next';
-import { PrimaryModule, Level1MenuItem } from '../types';
-import { PRIMARY_MODULES } from '../data/mockData';
+import { PrimaryModule, Level1MenuItem, LoginPageConfig } from '../types';
+import { PRIMARY_MODULES, DEFAULT_LOGIN_CONFIG } from '../data/mockData';
+import SystemConfigView from './SystemConfigView.vue';
 
 interface SubsystemModuleViewProps {
   module: PrimaryModule;
   activeSubMenuId?: string;
+  loginConfig?: LoginPageConfig;
 }
 
 const props = defineProps<SubsystemModuleViewProps>();
@@ -1028,6 +1078,9 @@ const emit = defineEmits<{
   (e: 'navigateHome'): void;
   (e: 'openQuickAction', actionKey: string): void;
   (e: 'showToast', msg: string): void;
+  (e: 'saveLoginConfig', config: LoginPageConfig): void;
+  (e: 'previewLoginPage'): void;
+  (e: 'openProfile'): void;
 }>();
 
 const currentModule = computed(() => {

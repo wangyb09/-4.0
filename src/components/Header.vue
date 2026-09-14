@@ -8,13 +8,19 @@
           @click="$emit('navigateHome')"
           class="flex items-center gap-2.5 text-left group focus:outline-none shrink-0 cursor-pointer"
         >
-          <!-- Aliyun-style Geometric Matrix Icon -->
-          <div class="w-7 h-7 rounded bg-[#FF6A00] flex items-center justify-center shadow-xs group-hover:bg-[#FF7D1A] transition-colors">
-            <Layers class="w-4 h-4 text-white" />
+          <!-- Aliyun-style Geometric Matrix Icon / Custom Logo -->
+          <div class="w-7 h-7 rounded bg-[#FF6A00] flex items-center justify-center shadow-xs group-hover:bg-[#FF7D1A] transition-colors overflow-hidden shrink-0">
+            <img
+              v-if="platformLogo"
+              :src="platformLogo"
+              alt="Logo"
+              class="w-full h-full object-contain p-0.5"
+            />
+            <Layers v-else class="w-4 h-4 text-white" />
           </div>
           <div class="flex items-center gap-2">
             <span class="font-bold text-base tracking-tight text-white group-hover:text-[#FF6A00] transition-colors whitespace-nowrap">
-              一体化数据平台
+              {{ platformTitle || '一体化数据平台' }}
             </span>
           </div>
         </button>
@@ -76,14 +82,56 @@
           </span>
         </button>
 
-        <!-- User Profile Avatar (Static Display, as requested) -->
-        <div class="flex items-center pl-2 border-l border-[#2B313A]">
-          <div
+        <!-- User Profile Avatar with Click & Dropdown Menu -->
+        <div class="relative flex items-center pl-2 border-l border-[#2B313A]">
+          <button
             id="header-user-avatar"
-            class="w-7 h-7 rounded bg-[#FF6A00] flex items-center justify-center text-white font-bold text-xs shadow-xs ring-1 ring-white/10 select-none cursor-default"
-            title="李晨 (超级管理员)"
+            @click="isUserMenuOpen = !isUserMenuOpen"
+            class="flex items-center gap-2 group p-0.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer select-none focus:outline-none"
+            :title="`${userProfile?.realName || '李晨'} (${userProfile?.role || '超级管理员'}) - 点击进入个人中心`"
           >
-            LC
+            <div
+              class="w-7 h-7 rounded bg-[#FF6A00] group-hover:bg-[#FF7D1A] flex items-center justify-center text-white font-bold text-xs shadow-xs ring-1 ring-white/10 overflow-hidden shrink-0"
+            >
+              <img
+                v-if="userProfile?.avatarType !== 'preset' && userProfile?.avatar"
+                :src="userProfile.avatar"
+                alt="Avatar"
+                class="w-full h-full object-cover"
+                referrerpolicy="no-referrer"
+              />
+              <span v-else>{{ userProfile?.avatar || 'LC' }}</span>
+            </div>
+            <span class="hidden md:inline-block text-xs font-medium text-slate-200 group-hover:text-white max-w-[70px] truncate">
+              {{ userProfile?.realName || '李晨' }}
+            </span>
+            <ChevronDown class="w-3 h-3 text-slate-400 group-hover:text-white transition-transform" :class="{ 'rotate-180': isUserMenuOpen }" />
+          </button>
+
+          <!-- User Dropdown Menu: Only Profile and Logout -->
+          <div
+            v-if="isUserMenuOpen"
+            class="absolute right-0 top-10 w-36 bg-[#2B313A] border border-[#3A424E] rounded-xl shadow-2xl py-1 text-xs text-slate-200 z-50 animate-in fade-in slide-in-from-top-2 duration-150 overflow-hidden"
+          >
+            <button
+              id="menu-btn-profile"
+              @click="isUserMenuOpen = false; $emit('openProfile')"
+              class="w-full px-3.5 py-2 text-left hover:bg-white/10 text-slate-200 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <User class="w-3.5 h-3.5 text-[#FF6A00]" />
+              <span>个人中心</span>
+            </button>
+
+            <div class="border-t border-[#3A424E]/80 my-0.5"></div>
+
+            <button
+              id="menu-btn-logout"
+              @click="isUserMenuOpen = false; $emit('logout')"
+              class="w-full px-3.5 py-2 text-left hover:bg-red-500/20 text-rose-300 hover:text-rose-200 flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <LogOut class="w-3.5 h-3.5 text-rose-400" />
+              <span>退出登录</span>
+            </button>
           </div>
         </div>
       </div>
@@ -92,9 +140,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Bell, CheckSquare, Layers } from 'lucide-vue-next';
-import { AlertItem, TodoItem, PrimaryModule } from '../types';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Bell, CheckSquare, Layers, ChevronDown, User, LogOut } from 'lucide-vue-next';
+import { AlertItem, TodoItem, PrimaryModule, UserProfile } from '../types';
 import { PRIMARY_MODULES } from '../data/mockData';
 
 interface HeaderProps {
@@ -102,6 +150,9 @@ interface HeaderProps {
   activeSubMenuId?: string;
   pendingTodos: TodoItem[];
   alerts: AlertItem[];
+  userProfile?: UserProfile;
+  platformTitle?: string;
+  platformLogo?: string;
 }
 
 const props = defineProps<HeaderProps>();
@@ -111,7 +162,26 @@ defineEmits<{
   (e: 'openTodos'): void;
   (e: 'openAlerts'): void;
   (e: 'navigateHome'): void;
+  (e: 'openProfile'): void;
+  (e: 'logout'): void;
 }>();
+
+const isUserMenuOpen = ref(false);
+
+const closeDropdown = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (!target.closest('#header-user-avatar') && !target.closest('.user-dropdown')) {
+    isUserMenuOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('click', closeDropdown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('click', closeDropdown);
+});
 
 const pendingTodosCount = computed(() => {
   return props.pendingTodos.filter((t) => t.status === 'pending').length;

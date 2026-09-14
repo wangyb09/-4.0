@@ -1,19 +1,37 @@
 <template>
-  <div class="min-h-screen bg-[#F2F3F5] text-slate-800 font-sans antialiased flex flex-col selection:bg-[#FF6A00] selection:text-white">
-    <!-- 1. Global Header with integrated 1st-level Navigation -->
+  <!-- If not logged in, render the Login Page directly -->
+  <LoginPage
+    v-if="!isLoggedIn"
+    :config="loginConfig"
+    @loginSuccess="handleLoginSuccess"
+    @showToast="showToast"
+  />
+
+  <!-- Main Authenticated Application Shell -->
+  <div
+    v-else
+    class="min-h-screen bg-[#F2F3F5] text-slate-800 font-sans antialiased flex flex-col selection:bg-[#FF6A00] selection:text-white"
+  >
+    <!-- 1. Global Header with integrated 1st-level Navigation & User Profile Avatar -->
     <Header
       :activeModule="activeModule"
       :activeSubMenuId="activeSubMenuId"
       :pendingTodos="todos"
       :alerts="alerts"
+      :userProfile="userProfile"
+      :platformTitle="loginConfig.platformTitle"
+      :platformLogo="loginConfig.platformLogo"
       @selectModule="handleSelectModule"
       @openTodos="handleOpenTodos"
       @openAlerts="handleOpenAlerts"
       @navigateHome="handleNavigateHome"
+      @openProfile="handleOpenProfile"
+      @logout="handleLogout"
     />
 
     <!-- 2. Main Workspace Area -->
     <main class="flex-1 max-w-[1600px] w-full mx-auto p-3.5 sm:p-5">
+      <!-- 2.1 Home Workbench -->
       <div v-if="activeModule === 'home'" class="space-y-3.5">
         <!-- 3.1 Platform Core Metrics Overview - Top 4 Cards -->
         <section id="workbench-metrics-overview">
@@ -44,13 +62,27 @@
         </section>
       </div>
 
-      <!-- Subsystem Dedicated Module Workspace -->
+      <!-- 2.2 Dedicated Personal Center View (Requested) -->
+      <UserProfileView
+        v-else-if="activeModule === 'profile'"
+        :profile="userProfile"
+        @saveProfile="handleSaveProfile"
+        @navigateHome="handleNavigateHome"
+        @logout="handleLogout"
+        @showToast="showToast"
+      />
+
+      <!-- 2.3 Subsystem Dedicated Module Workspace -->
       <SubsystemModuleView
         v-else
         :module="activeModule"
         :activeSubMenuId="activeSubMenuId"
+        :loginConfig="loginConfig"
         @navigateHome="handleNavigateHome"
         @openQuickAction="handleTriggerShortcut"
+        @saveLoginConfig="handleSaveLoginConfig"
+        @previewLoginPage="handlePreviewLoginPage"
+        @openProfile="handleOpenProfile"
         @showToast="showToast"
       />
     </main>
@@ -104,7 +136,9 @@
           'px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2.5 text-xs font-medium border bg-white',
           toastType === 'success'
             ? 'border-emerald-200 text-slate-800'
-            : 'border-orange-200 text-slate-800'
+            : toastType === 'warning'
+            ? 'border-amber-200 text-slate-800'
+            : 'border-blue-200 text-slate-800'
         ]"
       >
         <CheckCircle2 v-if="toastType === 'success'" class="w-4 h-4 text-[#00B365] shrink-0" />
@@ -127,6 +161,8 @@ import TodoDetailModal from './components/TodoDetailModal.vue';
 import ShortcutConfigModal from './components/ShortcutConfigModal.vue';
 import QuickActionModal from './components/QuickActionModal.vue';
 import SubsystemModuleView from './components/SubsystemModuleView.vue';
+import UserProfileView from './components/UserProfileView.vue';
+import LoginPage from './components/LoginPage.vue';
 
 import {
   PrimaryModule,
@@ -135,14 +171,51 @@ import {
   TodoItem,
   ShortcutItem,
   AlertSeverity,
+  UserProfile,
+  LoginPageConfig,
 } from './types';
 import {
   INITIAL_METRICS,
   INITIAL_ALERTS,
   INITIAL_TODOS,
   INITIAL_SHORTCUTS,
+  DEFAULT_USER_PROFILE,
+  DEFAULT_LOGIN_CONFIG,
 } from './data/mockData';
 import { CheckCircle2, AlertCircle } from 'lucide-vue-next';
+
+// Authentication & Login State
+const isLoggedIn = ref(true);
+
+// User Profile State with LocalStorage Persistence
+const getUserProfile = (): UserProfile => {
+  try {
+    const saved = localStorage.getItem('datacraft_user_profile');
+    if (saved) {
+      return { ...DEFAULT_USER_PROFILE, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error('Failed to load user profile from storage', e);
+  }
+  return DEFAULT_USER_PROFILE;
+};
+
+const userProfile = ref<UserProfile>(getUserProfile());
+
+// Login Page Configuration State with LocalStorage Persistence
+const getLoginConfig = (): LoginPageConfig => {
+  try {
+    const saved = localStorage.getItem('datacraft_login_config');
+    if (saved) {
+      return { ...DEFAULT_LOGIN_CONFIG, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error('Failed to load login config from storage', e);
+  }
+  return DEFAULT_LOGIN_CONFIG;
+};
+
+const loginConfig = ref<LoginPageConfig>(getLoginConfig());
 
 // Navigation state
 const activeModule = ref<PrimaryModule>('home');
@@ -192,6 +265,54 @@ const showToast = (msg: string, type: 'success' | 'info' | 'warning' = 'success'
   toastTimer = setTimeout(() => {
     toastMessage.value = null;
   }, 3200);
+};
+
+// User Profile Actions
+const handleOpenProfile = () => {
+  activeModule.value = 'profile';
+  activeSubMenuId.value = undefined;
+};
+
+const handleSaveProfile = (updated: UserProfile) => {
+  userProfile.value = updated;
+  try {
+    localStorage.setItem('datacraft_user_profile', JSON.stringify(updated));
+  } catch (e) {
+    console.error(e);
+  }
+  showToast('个人资料已成功更新保存！', 'success');
+};
+
+// System & Login Page Configuration Actions
+const handleSaveLoginConfig = (cfg: LoginPageConfig) => {
+  loginConfig.value = cfg;
+  try {
+    localStorage.setItem('datacraft_login_config', JSON.stringify(cfg));
+  } catch (e) {
+    console.error(e);
+  }
+  if (cfg.platformTitle) {
+    document.title = `${cfg.platformTitle} - 一体化智能数据中台`;
+  }
+  showToast('系统配置与登录页配置已成功保存并实时生效！', 'success');
+};
+
+const handlePreviewLoginPage = () => {
+  isLoggedIn.value = false;
+  showToast('已进入全屏登录页体验模式', 'info');
+};
+
+const handleLoginSuccess = (username: string) => {
+  isLoggedIn.value = true;
+  if (username && username !== userProfile.value.username) {
+    userProfile.value.username = username;
+  }
+  showToast(`欢迎回来，${userProfile.value.realName || username}！`, 'success');
+};
+
+const handleLogout = () => {
+  isLoggedIn.value = false;
+  showToast('已安全退出当前会话，返回登录页', 'info');
 };
 
 // Keyboard shortcut: Cmd/Ctrl + K for Global Search

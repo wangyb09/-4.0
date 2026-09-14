@@ -8,6 +8,8 @@ import {
   HourlyTaskStats,
   QualityDimensionScore,
   DataOverviewStatItem,
+  UserProfile,
+  LoginPageConfig,
 } from '../types';
 
 export const PRIMARY_MODULES: ModuleNavInfo[] = [
@@ -256,6 +258,7 @@ export const PRIMARY_MODULES: ModuleNavInfo[] = [
           { id: 'user_center', title: '用户中心', description: '企业账号、组织架构与部门人员信息' },
           { id: 'tenant_center', title: '租户中心', description: '多租户配额分配、租户隔离与账单' },
           { id: 'perm_center', title: '用户权限中心', description: 'RBAC角色授权、行级/列级安全访问策略' },
+          { id: 'sys_config', title: '系统配置', description: '自定义平台名称、平台Logo、登录页背景图片与文案配置' },
           { id: 'digital_news', title: '数字资讯', description: '平台数据产品动态与更新发布公告' },
           { id: 'msg_center', title: '消息中心', description: '系统通知、审批待办推送与告警订阅配置' },
         ],
@@ -264,6 +267,7 @@ export const PRIMARY_MODULES: ModuleNavInfo[] = [
     subMenus: [
       { id: 'system_home', title: '首页', description: '系统基础运行大盘与安全合规状态' },
       { id: 'sys_mgmt', title: '系统管理', description: '平台基础全局参数与模块功能开关' },
+      { id: 'sys_config', title: '系统配置', description: '自定义平台名称、平台Logo、登录页背景图片与文案配置' },
       { id: 'sys_monitor', title: '系统监控', description: '服务器节点资源、服务心跳与网络连通性' },
       { id: 'user_center', title: '用户中心', description: '企业账号、组织架构与部门人员信息' },
       { id: 'tenant_center', title: '租户中心', description: '多租户配额分配、租户隔离与账单' },
@@ -763,4 +767,58 @@ export const DATA_OVERVIEW_STATS: DataOverviewStatItem[] = [
     highlightTag: '存储健康分 98.6',
   },
 ];
+
+export const DEFAULT_USER_PROFILE: UserProfile = {
+  id: 'usr_lichen_9527',
+  username: 'lichen_admin',
+  realName: '李晨',
+  nickname: '晨光',
+  avatar: 'LC',
+  avatarType: 'preset',
+  email: 'lichen.admin@datacraft.io',
+  phone: '13800108888',
+  department: '集团数字化与数据中台架构部',
+  role: '超级管理员 / 首席数据架构师',
+  roleLevel: 'P8 专家架构师',
+  bio: '负责企业级全域湖仓一体化平台顶层设计、跨云元数据治理与关键生产调度流水线稳定性保障。',
+  mfaEnabled: true,
+  loginNotify: true,
+  lastLoginTime: '2026-09-14 08:35:12',
+  lastLoginIp: '192.168.1.108',
+  lastLoginLocation: '中国 · 北京 · 海淀区中关村软件园',
+};
+
+export const DEFAULT_LOGIN_CONFIG: LoginPageConfig = {
+  platformTitle: '数据中台',
+  platformLogo: '',
+  welcomeHeadline: '欢迎进入数据中台',
+  welcomeSubtitle: '全域数据资产统一纳管，赋能业务高效洞察与敏捷开发',
+  bgTheme: 'screenshot_geometric',
+  customBgUrl: '',
+  bgBlur: 0,
+  bgOpacity: 100,
+  showcaseStyle: 'isometric_cards',
+  customShowcaseUrl: '',
+  cardTitle: '欢迎登录',
+  enableCaptcha: false,
+  requirePrivacyCheck: true,
+  privacyPolicyTitle: '《服务协议与隐私条款》',
+  privacyPolicyContent: `一、服务范围与使用规范
+本数据中台系统仅供经企业内部授权认证的员工及合作伙伴在工作职责范围内使用。用户应严格遵守国家法律法规及企业信息安全管理规定，妥善保管个人系统账号与凭据，禁止将账号出租、出借或转移给任何第三方。
+
+二、数据安全与保密义务
+1. 用户在平台中访问、查询、加工、导出的所有业务数据、代码脚本及元数据资产均属于企业机密资产，受企业数据资产保密制度严格保护。
+2. 未经公司数据安全委员会或资产Owner书面审批许可，严禁私自截屏、批量导出、外泄或用于任何非工作用途。
+3. 系统将全程记录所有账号的操作日志、数据查询语句及文件导出审计追踪。
+
+三、用户权限与责任
+用户须按照最小权限原则申请与使用数据资产。如发现异常登录或数据安全隐患，应立即向系统管理员报告。如违反保密协议，企业保留依规严肃追责及解除劳动合同之权利。`,
+  helpLinks: [
+    { label: '帮助', url: '#' },
+    { label: '反馈', url: '#' },
+    { label: '修复公示', url: '#' },
+  ],
+  footerCopyright: '© 2026 数据中台 Enterprise Big Data Platform. 鲁ICP备20260914号-1',
+};
+
 

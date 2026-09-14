@@ -9,7 +9,8 @@ export type PrimaryModule =
   | 'service'
   | 'system'
   | 'bigdata_platform'
-  | 'ontology';
+  | 'ontology'
+  | 'profile';
 
 export interface SecondaryMenuItem {
   id: string;
@@ -163,3 +164,48 @@ export interface DataOverviewStatItem {
   breakdown: { label: string; value: string }[];
   highlightTag?: string;
 }
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  realName: string;
+  nickname: string;
+  avatar: string;
+  avatarType: 'preset' | 'custom_url' | 'upload';
+  email: string;
+  phone: string;
+  department: string;
+  role: string;
+  roleLevel: string;
+  bio: string;
+  mfaEnabled: boolean;
+  loginNotify: boolean;
+  lastLoginTime: string;
+  lastLoginIp: string;
+  lastLoginLocation: string;
+}
+
+export interface LoginPageConfig {
+  platformTitle: string;
+  platformLogo?: string;
+  welcomeHeadline: string;
+  welcomeSubtitle: string;
+  bgTheme?: 'screenshot_geometric' | 'tech_dark_blue' | 'gradient_mesh' | 'custom_image';
+  customBgUrl: string;
+  bgBlur: number;
+  bgOpacity: number;
+  showcaseStyle?: 'isometric_cards' | 'topology_chart' | 'custom_image';
+  customShowcaseUrl?: string;
+  cardTitle: string;
+  enableCaptcha?: boolean;
+  captchaType?: 'arithmetic' | 'alphanumeric';
+  requirePrivacyCheck: boolean;
+  privacyPolicyTitle?: string;
+  privacyPolicyContent?: string;
+  helpLinks: { label: string; url?: string }[];
+  footerCopyright: string;
+}
+
+export type SystemConfig = LoginPageConfig;
+
+
